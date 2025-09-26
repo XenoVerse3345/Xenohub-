@@ -1,0 +1,196 @@
+-- Safe OrionLib GUI: "bloxfruit xenohub"
+-- NOTE: This script purposely DOES NOT include any auto-farming, auto-raid, targeting players,
+-- or other exploitative features. Use only in Studio or for learning.
+
+local player = game.Players.LocalPlayer
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "bloxfruit xenohub", -- requested name
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "XenoHubConfig"
+})
+
+-- Tab: LocalPlayer Controls
+local tabLocal = Window:MakeTab({
+    Name = "LocalPlayer",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local sectionLP = tabLocal:AddSection({ Name = "Player Movement" })
+
+tabLocal:AddLabel("Speed & Jump (Local only)")
+tabLocal:AddSlider({
+    Name = "WalkSpeed",
+    Min = 16,
+    Max = 500,
+    Default = 16,
+    Color = Color3.fromRGB(0,170,255),
+    Increment = 1,
+    ValueFormat = function(val) return tostring(math.floor(val)) end,
+    Flag = "WalkSpeedSlider",
+    Callback = function(val)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = val
+        end
+    end
+})
+
+tabLocal:AddSlider({
+    Name = "JumpPower",
+    Min = 50,
+    Max = 300,
+    Default = 50,
+    Increment = 1,
+    Flag = "JumpPowerSlider",
+    Callback = function(val)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = val
+        end
+    end
+})
+
+tabLocal:AddButton({
+    Name = "Reset Movement",
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = 16
+            player.Character.Humanoid.JumpPower = 50
+            OrionLib:MakeNotification({
+                Name = "Reset",
+                Content = "WalkSpeed and JumpPower reset to defaults.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+-- Tab: Teleports & Utilities
+local tabUtil = Window:MakeTab({
+    Name = "Teleports / Utils",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+tabUtil:AddButton({
+    Name = "Teleport to Spawn",
+    Callback = function()
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") and player.RespawnLocation then
+            -- teleport to spawn location if available, else use default spawn
+            local spawn = player.RespawnLocation
+            if spawn and spawn:IsA("BasePart") then
+                char.HumanoidRootPart.CFrame = spawn.CFrame + Vector3.new(0,3,0)
+            else
+                -- fallback: use the first SpawnLocation in Workspace (safe)
+                local defaultSpawn = workspace:FindFirstChildOfClass("SpawnLocation")
+                if defaultSpawn then
+                    char.HumanoidRootPart.CFrame = defaultSpawn.CFrame + Vector3.new(0,3,0)
+                end
+            end
+        end
+    end
+})
+
+tabUtil:AddToggle({
+    Name = "Auto Respawn (safe)",
+    Default = false,
+    Flag = "AutoRespawnToggle",
+    Callback = function(state)
+        if state then
+            OrionLib.Flags.AutoRespawnActive = true
+            -- connect to CharacterAdded to print notification when respawn happens
+            OrionLib.Flags._respawnConn = player.CharacterAdded:Connect(function(char)
+                OrionLib:MakeNotification({
+                    Name = "Respawned",
+                    Content = "Character respawned.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 2
+                })
+            end)
+        else
+            OrionLib.Flags.AutoRespawnActive = false
+            if OrionLib.Flags._respawnConn then
+                OrionLib.Flags._respawnConn:Disconnect()
+                OrionLib.Flags._respawnConn = nil
+            end
+        end
+    end
+})
+
+tabUtil:AddLabel("Developer / Testing")
+tabUtil:AddButton({
+    Name = "Print Player Info",
+    Callback = function()
+        local info = {
+            Name = player.Name,
+            UserId = player.UserId,
+            Locale = player.LocaleId or "unknown",
+        }
+        print("Player Info:", info)
+        OrionLib:MakeNotification({
+            Name = "Player Info",
+            Content = "Printed to output. Check Studio / Output window.",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+-- Tab: Config & Help
+local tabHelp = Window:MakeTab({
+    Name = "Config & Help",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+tabHelp:AddLabel("About")
+tabHelp:AddParagraph("bloxfruit xenohub", "This GUI is for testing and learning OrionLib features only. It intentionally excludes any form of game exploitation (autofarm, raid, targeting players). Use only in Studio or on games you own.")
+
+tabHelp:AddButton({
+    Name = "Save Config Now",
+    Callback = function()
+        OrionLib:MakeNotification({
+            Name = "Config",
+            Content = "Orion saved settings automatically; manual save triggered.",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+        OrionLib:SaveConfig()
+    end
+})
+
+-- Example: Keybind (toggle GUI visibility)
+Window:AddKeybind({
+    Name = "Toggle UI",
+    Default = Enum.KeyCode.RightControl,
+    Hold = false, -- toggle
+    Callback = function()
+        Window:Toggle()
+    end
+})
+
+-- Helpful comments & placeholders (SAFE):
+-- If you are building features for a private game you own, add your game-specific logic below.
+-- Example placeholder (DO NOT use for multiplayer games you don't own):
+--[[
+-- Example safe placeholder: award XP in your own development game
+local function awardLocalXP(amount)
+    -- only affects your game logic: for example, increment a leaderstat
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if leaderstats and leaderstats:FindFirstChild("XP") then
+        leaderstats.XP.Value = leaderstats.XP.Value + amount
+    end
+end
+]]
+
+-- Final notification
+OrionLib:MakeNotification({
+    Name = "XenoHub Loaded",
+    Content = "bloxfruit xenohub (safe version) loaded. Use in Studio or on games you own.",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
